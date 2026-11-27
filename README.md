@@ -105,3 +105,7 @@ Needs Node 18 or later, with nothing to install:
 ```bash
 node --test core.test.mjs
 ```
+
+## License
+
+MIT. See [LICENSE](LICENSE).
