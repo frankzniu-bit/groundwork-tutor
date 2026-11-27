@@ -1,0 +1,793 @@
+<title>Groundwork</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+<style>
+/* Layout: a two-pane study bench. Conversation and the pinned question on the left, the live skill map on the right; tabs below 900px. */
+:root {
+  --bg: #eceff2;
+  --surface: #f7f8fa;
+  --ink: #16202c;
+  --muted: #5a6573;
+  --rule: #d3d9e0;
+  --accent: #2545c4;
+  --accent-ink: #ffffff;
+  --accent-soft: #dfe5fb;
+  --good: #1d7a4b;
+  --warn: #9a5700;
+  --warn-soft: #fbecd6;
+  --bad: #b2362a;
+  --display: "Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
+  --body: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #13161b; --surface: #1a1e25; --ink: #e2e6eb; --muted: #95a0ad; --rule: #2a313b;
+    --accent: #8ea4ff; --accent-ink: #0e1430; --accent-soft: #232c4d; --good: #6cc597;
+    --warn: #f0b35a; --warn-soft: #3a2b16; --bad: #f08a7d; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #13161b; --surface: #1a1e25; --ink: #e2e6eb; --muted: #95a0ad; --rule: #2a313b;
+  --accent: #8ea4ff; --accent-ink: #0e1430; --accent-soft: #232c4d; --good: #6cc597;
+  --warn: #f0b35a; --warn-soft: #3a2b16; --bad: #f08a7d; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--display); font-size: 15px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+button, input, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+button:disabled { cursor: not-allowed; opacity: .45; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.wrap { max-width: 1240px; margin: 0 auto; padding-block: 20px 32px; }
+.mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.label { font-family: var(--mono); font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.btn { border: 1px solid var(--rule); background: var(--surface); border-radius: 6px; padding: 7px 14px; transition: border-color .15s ease-out, background .15s ease-out; }
+.btn:hover:not(:disabled) { border-color: var(--accent); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+.btn.quiet { border-color: transparent; background: transparent; color: var(--muted); padding-inline: 8px; }
+.btn.quiet:hover:not(:disabled) { color: var(--ink); }
+textarea, input[type="text"] { width: 100%; background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; padding: 9px 11px; resize: vertical; }
+textarea:focus, input[type="text"]:focus { border-color: var(--accent); outline: none; }
+.note { font-size: 13px; color: var(--muted); }
+.err { color: var(--bad); }
+
+/* Home */
+.home { max-width: 760px; margin: 0 auto; display: grid; gap: 28px; padding-top: 6vh; }
+.brand { display: flex; align-items: baseline; gap: 12px; }
+.brand b { font-size: 15px; letter-spacing: .02em; }
+.home h1 { font-size: clamp(30px, 5vw, 46px); line-height: 1.08; margin: 0; font-weight: 700; text-wrap: balance; letter-spacing: -.01em; }
+.start { display: grid; gap: 12px; }
+.start textarea { font-family: var(--body); font-size: 18px; min-height: 76px; }
+.start-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
+.seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; }
+.seg label { padding: 6px 14px; cursor: pointer; font-size: 14px; }
+.seg input { position: absolute; opacity: 0; pointer-events: none; }
+.seg label:has(input:checked) { background: var(--ink); color: var(--bg); }
+.seg label:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: -2px; }
+.courses { display: grid; gap: 10px; }
+.course { display: grid; grid-template-columns: 1fr auto; gap: 4px 16px; align-items: center; padding: 14px 16px; background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; }
+.course button.open { all: unset; cursor: pointer; display: grid; gap: 4px; min-width: 0; }
+.course button.open:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+.course .t { font-weight: 600; font-size: 17px; overflow-wrap: anywhere; }
+.course .g { font-family: var(--body); color: var(--muted); font-size: 14px; overflow-wrap: anywhere; }
+.course .meta { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12.5px; color: var(--muted); }
+.course .side { display: grid; justify-items: end; gap: 6px; }
+.pct { font-size: 22px; font-weight: 600; }
+.empty { padding: 22px; border: 1px dashed var(--rule); border-radius: 8px; color: var(--muted); font-family: var(--body); }
+
+/* Session */
+.bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding-bottom: 14px; border-bottom: 1px solid var(--rule); }
+.bar .title { flex: 1 1 260px; min-width: 0; }
+.bar .title b { display: block; font-size: 18px; overflow-wrap: anywhere; }
+.bar .title span { display: block; font-family: var(--body); color: var(--muted); font-size: 14px; overflow-wrap: anywhere; }
+.progress { flex: 0 1 220px; display: grid; gap: 4px; }
+.track { height: 6px; background: var(--rule); border-radius: 3px; overflow: hidden; }
+.track i { display: block; height: 100%; background: var(--accent); transition: width .25s ease-out; }
+.chip { font-family: var(--mono); font-size: 11.5px; text-transform: uppercase; letter-spacing: .06em; border: 1px solid var(--rule); border-radius: 99px; padding: 2px 9px; color: var(--muted); }
+.tabs { display: none; gap: 4px; margin-top: 12px; }
+.grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 420px); gap: 24px; margin-top: 18px; align-items: start; }
+.talk { display: grid; gap: 16px; min-width: 0; }
+.log { display: grid; gap: 18px; }
+.msg { min-width: 0; }
+.msg.tutor .text, .prompt { font-family: var(--body); font-size: 16.5px; line-height: 1.6; }
+.msg.tutor .text > :first-child, .prompt > :first-child { margin-top: 0; }
+.msg.tutor .text > :last-child, .prompt > :last-child { margin-bottom: 0; }
+.msg .text p { margin: 0 0 .7em; }
+.msg .text pre, .prompt pre { overflow-x: auto; background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; padding: 10px; font-size: 13.5px; }
+.msg .text code, .prompt code { font-family: var(--mono); font-size: .88em; }
+.msg .asked { margin-top: 8px; padding-left: 12px; border-left: 2px solid var(--rule); font-family: var(--body); color: var(--muted); }
+.msg .hinttext { margin-top: 8px; font-family: var(--body); }
+.msg.learner { justify-self: end; max-width: 88%; background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 10px 14px; }
+.msg.learner .ans { font-family: var(--body); white-space: pre-wrap; overflow-wrap: anywhere; }
+.msg.learner .why { margin-top: 6px; font-size: 13px; color: var(--muted); font-family: var(--body); font-style: italic; white-space: pre-wrap; }
+.verdict { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 13px; }
+.verdict.good { color: var(--good); }
+.verdict.bad { color: var(--bad); }
+.verdict.neutral { color: var(--muted); }
+.verdict.spotted { color: var(--warn); background: var(--warn-soft); border-radius: 6px; padding: 8px 10px; display: grid; gap: 2px; }
+.verdict.spotted b { font-size: 14px; }
+
+.dock { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 16px; display: grid; gap: 14px; }
+.dock.prediction { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); }
+.qhead { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.qhead .kind { font-weight: 700; font-size: 14px; }
+.tag { font-family: var(--mono); font-size: 11px; border-radius: 4px; padding: 1px 6px; background: var(--accent-soft); color: var(--ink); }
+.tag.warn { background: var(--warn-soft); color: var(--warn); }
+.hints { display: grid; gap: 6px; font-family: var(--body); font-size: 15px; }
+.hints div { padding-left: 10px; border-left: 2px solid var(--accent); }
+.opts { display: grid; gap: 8px; }
+.opt { text-align: left; display: grid; grid-template-columns: 24px 1fr; gap: 10px; align-items: baseline; border: 1px solid var(--rule); background: var(--bg); border-radius: 6px; padding: 9px 12px; font-family: var(--body); font-size: 15.5px; }
+.opt .k { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.opt[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.conf { display: grid; gap: 4px; }
+.conf .row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.conf input { width: 100%; accent-color: var(--accent); }
+.conf.unset output { color: var(--bad); }
+.thinking { font-family: var(--body); font-size: 14.5px; min-height: 54px; }
+.answer { font-family: var(--body); font-size: 16px; min-height: 84px; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
+.actions .left, .actions .right { display: flex; flex-wrap: wrap; gap: 8px; }
+.busy { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.pulse { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); margin-right: 8px; animation: pulse 1.2s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .25; } }
+.plan ul { margin: 0; padding-left: 18px; font-family: var(--body); }
+.plan li { margin: 4px 0; }
+
+.map { position: sticky; top: env(safe-area-inset-top, 0px); display: grid; gap: 12px; min-width: 0; }
+.mapbox { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 10px; overflow-x: auto; }
+.mapbox svg { display: block; width: 100%; min-width: 300px; height: auto; }
+.mapbox .none { padding: 30px 10px; text-align: center; color: var(--muted); font-family: var(--body); }
+svg .edge { stroke: var(--rule); stroke-width: 1.5; fill: none; }
+svg .edge.lit { stroke: var(--accent); }
+svg .nd rect { fill: var(--bg); stroke: var(--rule); stroke-width: 1.5; }
+svg .nd { cursor: pointer; }
+svg .nd:focus-visible rect { stroke: var(--accent); stroke-width: 2.5; }
+svg .nd.sel rect { stroke: var(--ink); }
+svg .nd.focus rect { stroke: var(--accent); animation: focuspulse 2.4s ease-in-out infinite; }
+svg .nd.lit rect { stroke: var(--accent); fill: var(--accent-soft); }
+svg .nd.up rect { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+@keyframes focuspulse { 50% { stroke-opacity: .35; } }
+svg .nt { fill: var(--ink); font-family: var(--display); font-size: 12.5px; font-weight: 600; }
+svg .nl { font-family: var(--mono); font-size: 11px; }
+svg .flag { fill: var(--warn); font-family: var(--mono); font-size: 11px; font-weight: 600; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--muted); }
+.detail { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 14px; display: grid; gap: 10px; }
+.detail h3 { margin: 0; font-size: 16px; }
+.detail .claim { font-family: var(--body); }
+.detail table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.detail th, .detail td { text-align: left; padding: 4px 6px 4px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+.detail td { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.detail ul { margin: 0; padding-left: 18px; font-family: var(--body); font-size: 14px; }
+.tblwrap { overflow-x: auto; }
+.banner { font-size: 13px; padding: 8px 12px; border-radius: 6px; background: var(--warn-soft); color: var(--warn); }
+.confirm { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 13px; }
+
+@media (max-width: 900px) {
+  .grid { grid-template-columns: minmax(0, 1fr); }
+  .tabs { display: flex; }
+  .grid[data-tab="talk"] .map, .grid[data-tab="map"] .talk { display: none; }
+  .map { position: static; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+
+<div class="wrap" id="app"><p class="note">Loading…</p></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.4.2/math.min.js"></script>
+<script src="core.js"></script>
+<script>
+(function () {
+  "use strict";
+  const C = window.GroundworkCore;
+  const app = document.getElementById("app");
+  const SESSION = "s" + Date.now().toString(36);
+  const MODEL = "claude-opus-5-5";
+  const BAR = (l) => "\u2588".repeat(l) + "\u2591".repeat(5 - l);
+
+  const S = {
+    view: "home", courses: [], course: null, loading: true, busy: false, started: 0, ctl: null,
+    error: null, lastSubmission: null, tab: "talk", selected: null, sel: null, conf: null,
+    flash: new Set(), lit: new Set(), confirmDelete: null, adjusting: false,
+  };
+
+  // ---------- helpers ----------
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  function md(s) {
+    const raw = String(s || "");
+    if (window.marked && window.DOMPurify) {
+      return DOMPurify.sanitize(marked.parse(raw, { breaks: true }), { ALLOWED_URI_REGEXP: /^https:/i });
+    }
+    return esc(raw).replace(/\n/g, "<br>");
+  }
+  const evaluate = window.math ? (e) => window.math.evaluate(e) : undefined;
+  const when = (t) => {
+    if (!t) return "";
+    const d = (Date.now() - t) / 60000;
+    if (d < 1) return "just now";
+    if (d < 60) return Math.round(d) + " min ago";
+    if (d < 1440) return Math.round(d / 60) + " h ago";
+    return Math.round(d / 1440) + " d ago";
+  };
+  const phaseName = { clarify: "Setting the goal", probe: "Finding your edge", plan: "Planning", teach: "Teaching", practice: "Practice", final: "Final check", done: "Complete" };
+
+  // ---------- storage: private per-user docs in the artifact's db, else this browser ----------
+  const store = {
+    kind: "loading", db: null, uid: null, queue: new Map(),
+    async init() {
+      try {
+        const use = window.claude && window.claude.use ? window.claude.use.bind(window.claude) : null;
+        const [db, user] = use ? await Promise.all([use("db"), use("user")]) : [null, null];
+        const id = user ? await user.id() : null;
+        if (db && id) { this.db = db; this.uid = id; this.kind = "db"; return; }
+      } catch (e) { /* fall through */ }
+      this.kind = localOk() ? "local" : "none";
+    },
+    col() { return this.db.collection("data/users/" + this.uid); },
+    async list() {
+      if (this.kind === "db") {
+        const snap = await this.col().get();
+        return snap.docs.map((d) => d.data()).filter((c) => c && c.id && c.topic);
+      }
+      if (this.kind === "local") {
+        const out = [];
+        try {
+          for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i);
+            if (k && k.startsWith("gw:")) out.push(JSON.parse(localStorage.getItem(k)));
+          }
+        } catch (e) { /* storage blocked */ }
+        return out;
+      }
+      return [];
+    },
+    // One write at a time per course; a burst collapses into the latest state.
+    save(course) {
+      const body = fit(JSON.parse(JSON.stringify(course)));
+      const q = this.queue.get(course.id) || { running: false, next: null };
+      q.next = body;
+      this.queue.set(course.id, q);
+      if (!q.running) this.drain(course.id);
+    },
+    async drain(id) {
+      const q = this.queue.get(id);
+      q.running = true;
+      while (q.next) {
+        const body = q.next;
+        q.next = null;
+        try {
+          if (this.kind === "db") await this.col().doc(id).set(body);
+          else if (this.kind === "local") localStorage.setItem("gw:" + id, JSON.stringify(body));
+          S.saveError = null;
+        } catch (e) {
+          S.saveError = e && e.code === "quota_exceeded" ? "Storage is full. Delete an old course to keep saving." : "Couldn't save the latest progress. It will retry on your next answer.";
+          renderBanner();
+        }
+      }
+      q.running = false;
+    },
+    async remove(id) {
+      if (this.kind === "db") await this.col().doc(id).delete();
+      else if (this.kind === "local") { try { localStorage.removeItem("gw:" + id); } catch (e) { /* ignore */ } }
+    },
+  };
+  function localOk() { try { localStorage.setItem("gw:probe", "1"); localStorage.removeItem("gw:probe"); return true; } catch (e) { return false; } }
+  // Docs cap at 256 KiB; the transcript is the part that can be trimmed.
+  function fit(c) {
+    while (JSON.stringify(c).length > 230000 && c.transcript.length > 20) c.transcript = c.transcript.slice(Math.floor(c.transcript.length / 3));
+    return c;
+  }
+
+  // ---------- Claude ----------
+  let samplePromise = null;
+  const getSample = () => (samplePromise ||= (window.claude && window.claude.use ? window.claude.use("sample") : Promise.resolve(null)));
+
+  function errorCopy(e) {
+    switch (e && e.code) {
+      case "not_granted": case "sampling_disabled": case "not_declared": case "capability_disabled": case "capability_removed":
+        return { text: "Claude isn't available to this page. Open it in Claude while signed in and allow it to use Claude when asked.", retry: false };
+      case "rate_limited":
+        return { text: e.reason === "usage_limit" ? "You've reached your Claude usage limit. Try again once it resets." : "Too many requests at once. Wait a moment, then retry.", retry: true };
+      case "session_expired": return { text: "Your Claude session expired. Sign in again, then retry.", retry: true };
+      case "refused": return { text: "Claude declined this turn. Rephrase your answer, or retry.", retry: true };
+      case "prompt_too_large": return { text: "This course's history is too long to send. Start a new course on the remaining material.", retry: false };
+      default: return { text: "The tutor's reply didn't come through. Retry.", retry: true };
+    }
+  }
+
+  async function sendTurn(submission) {
+    const course = S.course;
+    if (!course || S.busy) return;
+    const sample = await getSample();
+    if (!sample) { S.error = { text: "Claude isn't available here. Open this page in Claude (claude.ai or the desktop app) while signed in.", retry: false }; renderSession(); return; }
+    S.busy = true; S.error = null; S.lastSubmission = submission; S.started = Date.now();
+    S.ctl = new AbortController();
+    renderSession();
+    const tick = setInterval(() => { const el = document.getElementById("elapsed"); if (el) el.textContent = Math.round((Date.now() - S.started) / 1000) + "s"; }, 1000);
+    const deep = ["clarify", "probe", "plan"].includes(course.phase) || (submission.action === "answer" && course.pending);
+    let out = null, v = null, repair = null;
+    try {
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const prompt = C.buildPrompt(course, submission, { repair });
+        out = await sample.json(prompt, { model: MODEL, modelTier: "complex", effort: deep ? "high" : "medium", cache: false, signal: S.ctl.signal });
+        v = C.validateTurn(out, course, { submission, evaluate, sessionId: SESSION, now: Date.now() });
+        if (!v.errs.length) break;
+        repair = v.errs;
+      }
+      if (v.errs.length) {
+        S.error = { text: "The tutor's reply failed the app's checks twice (" + v.errs[0] + "). Retry.", retry: true };
+      } else {
+        const events = C.applyTurn(course, out, submission, { sessionId: SESSION, now: Date.now(), mathStatus: v.math ? v.math.status : "none" });
+        S.sel = null; S.conf = null; S.adjusting = false;
+        store.save(course);
+        celebrate(events);
+      }
+    } catch (e) {
+      if (!(e && e.code === "cancelled")) S.error = errorCopy(e);
+    } finally {
+      clearInterval(tick);
+      S.busy = false; S.ctl = null;
+      renderSession();
+      scrollLog();
+    }
+  }
+
+  function celebrate(events) {
+    const c = S.course;
+    for (const ev of events) {
+      if (ev.type === "level_up") {
+        S.flash.add(ev.nodeId);
+        setTimeout(() => { S.flash.delete(ev.nodeId); renderMap(); }, 1100);
+        // The "click" moment: a node built on 2+ prerequisites reaching 4 lights its path to the goal.
+        if (ev.to >= 4 && C.prereqsOf(c, ev.nodeId).length >= 2) {
+          const down = descendants(c, ev.nodeId);
+          down.add(ev.nodeId);
+          S.lit = down;
+          setTimeout(() => { S.lit = new Set(); renderMap(); }, 2200);
+        }
+      }
+    }
+  }
+  function descendants(c, id) {
+    const out = new Set();
+    const walk = (x) => { for (const [a, b] of c.edges) if (a === x && !out.has(b)) { out.add(b); walk(b); } };
+    walk(id);
+    return out;
+  }
+
+  // ---------- views ----------
+  function render() { S.view === "home" ? renderHome() : renderSession(); }
+
+  function storageNote() {
+    if (store.kind === "local") return '<p class="banner">Progress is saved in this browser only. Open this page in Claude while signed in to save it to your account.</p>';
+    if (store.kind === "none") return '<p class="banner">Progress can\'t be saved in this view. Open this page in Claude while signed in.</p>';
+    return "";
+  }
+
+  function renderHome() {
+    const list = S.courses.slice().sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+    app.innerHTML = `
+      <section class="home">
+        <div class="brand"><b>Groundwork</b><span class="label">a tutor that checks every step</span></div>
+        <form class="start" id="start">
+          <label for="topic"><h1>What do you want to understand?</h1></label>
+          <textarea id="topic" rows="2" placeholder="e.g. why the sky is blue, or how compound interest works" required></textarea>
+          <div class="start-row">
+            <div class="seg" role="radiogroup" aria-label="Mode">
+              <label><input type="radio" name="mode" value="teach" checked> Teach me</label>
+              <label><input type="radio" name="mode" value="drill"> Drill me</label>
+            </div>
+            <button class="btn primary" type="submit">Start</button>
+          </div>
+          <p class="note">Teach me starts by finding what you already know. Drill me is for material you've learned and want to practise.</p>
+        </form>
+        ${storageNote()}
+        <section class="courses" aria-label="Your courses">
+          <span class="label">Your courses</span>
+          ${S.loading ? '<p class="note">Loading your courses…</p>' : list.length ? list.map(courseCard).join("") :
+            '<div class="empty">No courses yet. Type a topic above. The tutor will ask a few questions to find where you are, then propose a map from what you know to the goal.</div>'}
+        </section>
+      </section>`;
+    document.getElementById("start").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const topic = document.getElementById("topic").value.trim();
+      if (!topic) return;
+      const mode = new FormData(e.target).get("mode");
+      const c = C.newCourse(topic, mode, Date.now());
+      S.courses.push(c);
+      openCourse(c);
+      store.save(c);
+      sendTurn({ action: "message", message: (mode === "drill" ? "Drill me on: " : "I want to understand: ") + topic });
+    });
+    document.getElementById("topic").addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); document.getElementById("start").requestSubmit(); }
+    });
+    app.querySelectorAll("[data-open]").forEach((b) => b.addEventListener("click", () => openCourse(S.courses.find((c) => c.id === b.dataset.open))));
+    app.querySelectorAll("[data-del]").forEach((b) => b.addEventListener("click", () => { S.confirmDelete = b.dataset.del; renderHome(); }));
+    app.querySelectorAll("[data-delyes]").forEach((b) => b.addEventListener("click", async () => {
+      const id = b.dataset.delyes;
+      S.courses = S.courses.filter((c) => c.id !== id); S.confirmDelete = null; renderHome();
+      try { await store.remove(id); } catch (e) { /* shown on next load */ }
+    }));
+    app.querySelectorAll("[data-delno]").forEach((b) => b.addEventListener("click", () => { S.confirmDelete = null; renderHome(); }));
+    if (!list.length) document.getElementById("topic").focus();
+  }
+
+  function courseCard(c) {
+    const pct = C.masteryPct(c);
+    const del = S.confirmDelete === c.id
+      ? `<div class="confirm"><span>Delete this course and its progress?</span><button class="btn" data-delyes="${esc(c.id)}">Delete</button><button class="btn quiet" data-delno="1">Keep</button></div>`
+      : `<button class="btn quiet" data-del="${esc(c.id)}" aria-label="Delete ${esc(c.topic)}">Delete</button>`;
+    return `<article class="course">
+      <button class="open" data-open="${esc(c.id)}">
+        <span class="t">${esc(c.topic)}</span>
+        ${c.goal ? `<span class="g">${esc(c.goal)}</span>` : ""}
+        <span class="meta"><span>${esc(phaseName[c.phase] || c.phase)}</span><span>${(c.nodes || []).length} concepts</span><span>${esc(when(c.updatedAt))}</span></span>
+      </button>
+      <div class="side"><span class="pct mono">${pct}%</span>${del}</div>
+    </article>`;
+  }
+
+  function openCourse(c) {
+    if (!c) return;
+    S.course = c; S.view = "session"; S.error = null; S.selected = null; S.sel = null; S.conf = null; S.tab = "talk";
+    renderSession();
+    scrollLog();
+  }
+
+  function renderSession() {
+    const c = S.course;
+    if (!c) return renderHome();
+    const pct = C.masteryPct(c);
+    app.innerHTML = `
+      <header class="bar">
+        <button class="btn quiet" id="back">← Courses</button>
+        <div class="title"><b>${esc(c.topic)}</b>${c.goal ? `<span>${esc(c.goal)}</span>` : ""}</div>
+        <div class="progress" aria-label="Overall mastery ${pct}%"><div class="row label"><span>Mastery</span> <span class="mono">${pct}%</span></div><div class="track"><i style="width:${pct}%"></i></div></div>
+        <span class="chip">${esc(phaseName[c.phase] || c.phase)}</span>
+      </header>
+      <div id="banner"></div>
+      <nav class="tabs" role="tablist" aria-label="Session views">
+        <button class="btn ${S.tab === "talk" ? "primary" : ""}" data-tab="talk" role="tab" aria-selected="${S.tab === "talk"}">Session</button>
+        <button class="btn ${S.tab === "map" ? "primary" : ""}" data-tab="map" role="tab" aria-selected="${S.tab === "map"}">Skill map</button>
+      </nav>
+      <div class="grid" data-tab="${S.tab}">
+        <section class="talk" aria-label="Conversation">
+          <div class="log" id="log" aria-live="polite">${c.transcript.map(entryHTML).join("")}</div>
+          <div id="dock"></div>
+        </section>
+        <aside class="map" aria-label="Skill map"><div id="mapwrap"></div></aside>
+      </div>`;
+    document.getElementById("back").addEventListener("click", () => { if (S.ctl) S.ctl.abort(); S.view = "home"; S.course = null; renderHome(); });
+    app.querySelectorAll(".tabs [data-tab]").forEach((b) => b.addEventListener("click", () => { S.tab = b.dataset.tab; renderSession(); }));
+    renderBanner();
+    renderDock();
+    renderMap();
+  }
+
+  function renderBanner() {
+    const el = document.getElementById("banner");
+    if (!el) return;
+    el.innerHTML = (S.saveError ? `<p class="banner" style="margin-top:12px">${esc(S.saveError)}</p>` : "") + (storageNote() ? `<div style="margin-top:12px">${storageNote()}</div>` : "");
+  }
+
+  function verdictHTML(e) {
+    const conf = e.confidence;
+    switch (e.verdict) {
+      case "correct":
+        return conf >= 80 ? `<div class="verdict good">✓ Correct</div>` : `<div class="verdict good">✓ Correct, with ${conf}% confidence. Expect another look at this.</div>`;
+      case "partial": case "wrong":
+        return conf >= 80
+          ? `<div class="verdict spotted"><b>Misconception spotted</b><span>You were ${conf}% sure and it's wrong. Confident errors like this are the ones feedback fixes best, so it comes back for a retest later.</span></div>`
+          : `<div class="verdict bad">${e.verdict === "partial" ? "Partly right" : "Not right"}</div>`;
+      case "dont_know": return `<div class="verdict neutral">Gap noted</div>`;
+      case "told": return `<div class="verdict neutral">Answer shown. No credit for this check; it comes back later.</div>`;
+      case "prediction": return `<div class="verdict neutral">Prediction logged</div>`;
+      default: return "";
+    }
+  }
+
+  function entryHTML(e) {
+    if (e.role === "tutor") {
+      if (!e.say && !e.hint && !e.question) return "";
+      return `<div class="msg tutor">
+        ${e.say ? `<div class="text">${md(e.say)}</div>` : ""}
+        ${e.hint ? `<div class="hinttext"><span class="label">Hint</span> ${md(e.hint)}</div>` : ""}
+      </div>`;
+    }
+    const label = { answer: "", dont_know: "I don't know", just_tell_me: "Just tell me", hint: "Hint, please", harder: "Harder", easier: "Easier", message: "", confirm: "" }[e.action] ?? "";
+    const text = e.text || label;
+    if (!text) return "";
+    return `<div class="msg learner">
+      <div class="ans">${esc(text)}</div>
+      ${e.action === "answer" && e.confidence != null ? `<div class="label" style="margin-top:6px">Confidence <span class="mono">${esc(e.confidence)}%</span></div>` : ""}
+      ${e.thinking ? `<div class="why">${esc(e.thinking)}</div>` : ""}
+      ${verdictHTML(e)}
+    </div>`;
+  }
+
+  function scrollLog() {
+    const d = document.getElementById("dock");
+    if (d) d.scrollIntoView({ block: "end" });
+  }
+
+  function nodeOf(id) { return (S.course.nodes || []).find((n) => n.id === id); }
+
+  function renderDock() {
+    const el = document.getElementById("dock");
+    if (!el) return;
+    const c = S.course;
+    el.className = "dock";
+    if (S.busy) {
+      el.innerHTML = `<div class="busy"><span><span class="pulse" aria-hidden="true"></span>Tutor is thinking… <span class="mono" id="elapsed">0s</span></span><button class="btn" id="stop">Stop</button></div>
+        <p class="note">Opus thinks before it answers; a turn usually takes 10 to 60 seconds.</p>`;
+      document.getElementById("stop").addEventListener("click", () => S.ctl && S.ctl.abort());
+      return;
+    }
+    if (S.error) {
+      el.innerHTML = `<p class="err" role="alert">${esc(S.error.text)}</p>
+        <div class="actions"><div class="left">${S.error.retry && S.lastSubmission ? '<button class="btn primary" id="retry">Retry</button>' : ""}</div></div>`;
+      const r = document.getElementById("retry");
+      if (r) r.addEventListener("click", () => sendTurn(S.lastSubmission));
+      return;
+    }
+    if (c.phase === "plan" && !c.planConfirmed && (c.nodes || []).length) return planDock(el);
+    if (c.pending) return questionDock(el);
+    if (c.phase === "done") return doneDock(el);
+    el.innerHTML = `<label class="label" for="reply">Reply to the tutor</label>
+      <textarea id="reply" class="answer" rows="3" placeholder="Enter to send, Shift+Enter for a new line"></textarea>
+      <div class="actions"><div class="left"></div><div class="right"><button class="btn primary" id="send">Send</button></div></div>`;
+    const send = () => { const t = document.getElementById("reply").value.trim(); if (t) sendTurn({ action: "message", message: t }); };
+    document.getElementById("send").addEventListener("click", send);
+    document.getElementById("reply").addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } });
+  }
+
+  function planDock(el) {
+    const c = S.course;
+    el.className = "dock plan";
+    el.innerHTML = `<div class="qhead"><span class="kind">Proposed plan</span><span class="tag">${c.nodes.length} concepts</span></div>
+      ${c.planRationale ? `<div class="prompt">${md(c.planRationale)}</div>` : ""}
+      <ul>${C.layout(c).flat().map((id) => { const n = nodeOf(id); return `<li><b>${esc(n.title)}</b> <span class="note">${esc(n.knowledge_type.replace("_", " "))}</span>${n.claim ? `: ${esc(n.claim)}` : ""}</li>`; }).join("")}</ul>
+      <p class="note">Listed from foundations up. The map shows how they connect.</p>
+      ${S.adjusting ? `<label class="label" for="adjust">What should change?</label><textarea id="adjust" class="answer" rows="3" placeholder="e.g. I already know derivatives; skip that branch"></textarea>` : ""}
+      <div class="actions"><div class="left">
+        ${S.adjusting ? '<button class="btn primary" id="sendadj">Send changes</button><button class="btn quiet" id="canceladj">Cancel</button>' : '<button class="btn primary" id="confirm">Confirm plan</button><button class="btn" id="adj">Adjust</button>'}
+      </div></div>`;
+    if (S.adjusting) {
+      document.getElementById("sendadj").addEventListener("click", () => { const t = document.getElementById("adjust").value.trim(); if (t) sendTurn({ action: "message", message: "Adjust the plan: " + t }); });
+      document.getElementById("canceladj").addEventListener("click", () => { S.adjusting = false; renderDock(); });
+      document.getElementById("adjust").focus();
+    } else {
+      document.getElementById("confirm").addEventListener("click", () => {
+        c.planConfirmed = true;
+        c.phase = c.mode === "drill" ? "practice" : "teach";
+        store.save(c);
+        sendTurn({ action: "confirm", message: "Plan confirmed. Begin." });
+      });
+      document.getElementById("adj").addEventListener("click", () => { S.adjusting = true; renderDock(); });
+    }
+  }
+
+  function doneDock(el) {
+    const c = S.course;
+    const lv = C.levels(c);
+    const weakest = (c.nodes || []).slice().sort((a, b) => lv[a.id] - lv[b.id]).slice(0, 3);
+    el.innerHTML = `<div class="qhead"><span class="kind">Course complete</span></div>
+      <p class="prompt">Every concept reached level ${c.targetLevel} and the final check is done.</p>
+      <div><span class="label">Weakest areas</span><ul>${weakest.map((n) => `<li>${esc(n.title)} <span class="mono">${BAR(lv[n.id])}</span></li>`).join("")}</ul></div>`;
+  }
+
+  function questionDock(el) {
+    const c = S.course;
+    const q = c.pending;
+    const node = q.node_id ? nodeOf(q.node_id) : null;
+    const maxRung = node ? C.PEDAGOGY[node.knowledge_type].maxRung : 2;
+    const kind = { prediction: "Predict first", teach_back: "Explain it back", multiple_choice: "Question", free_response: "Question" }[q.type];
+    const isClarify = q.check_kind === "clarify";
+    el.className = "dock" + (q.type === "prediction" ? " prediction" : "");
+    const confSet = S.conf != null;
+    el.innerHTML = `
+      <div class="qhead">
+        <span class="kind">${kind}</span>
+        ${node ? `<span class="tag">${esc(node.title)}</span>` : ""}
+        ${q.unverified ? '<span class="tag warn" title="The answer to this problem couldn\'t be checked by calculation.">Unverified</span>' : ""}
+        ${q.type === "prediction" ? '<span class="note">Guessing is expected. This tells the tutor where to start.</span>' : ""}
+      </div>
+      <div class="prompt" id="qprompt">${md(q.prompt)}</div>
+      ${(q.hints || []).length ? `<div class="hints">${q.hints.map((h, i) => `<div><span class="label">Hint ${i + 1}</span> ${md(h)}</div>`).join("")}</div>` : ""}
+      ${q.type === "multiple_choice"
+        ? `<div class="opts" role="group" aria-label="Options">${q.options.map((o, i) => `<button class="opt" data-opt="${i}" aria-pressed="${S.sel === i}"><span class="k">${i + 1}</span><span>${esc(o)}</span></button>`).join("")}</div>`
+        : `<label class="label" for="answer">${q.type === "teach_back" ? "Explain it as if to a friend who missed class" : isClarify ? "Your answer" : "Your answer"}</label><textarea id="answer" class="answer" rows="3" placeholder="Enter to submit, Shift+Enter for a new line"></textarea>`}
+      ${isClarify ? "" : `<div class="conf ${confSet ? "" : "unset"}">
+        <div class="row"><label class="label" for="conf">How sure are you?</label><output id="confout" class="mono">${confSet ? S.conf + "%" : "Set this"}</output></div>
+        <input type="range" id="conf" min="0" max="100" step="5" value="${confSet ? S.conf : 50}" aria-describedby="confout">
+      </div>
+      <label class="label" for="thinking">Your thinking <span style="text-transform:none;letter-spacing:0">(optional)</span></label>
+      <textarea id="thinking" class="thinking" rows="2" placeholder="Stream of consciousness. Doubts, guesses, what feels obvious."></textarea>`}
+      <div class="actions">
+        <div class="left">
+          <button class="btn primary" id="submit">Submit</button>
+          ${isClarify ? "" : '<button class="btn" id="idk">I don\'t know</button>'}
+        </div>
+        ${isClarify ? "" : `<div class="right">
+          <button class="btn quiet" id="hint" ${q.hintRung >= maxRung ? "disabled" : ""}>Hint ${q.hintRung || 0}/${maxRung}</button>
+          <button class="btn quiet" id="tell" title="Shows the answer. This check earns no credit, and the idea comes back for a retest.">Just tell me</button>
+          <button class="btn quiet" id="harder">Harder</button>
+          <button class="btn quiet" id="easier">Easier</button>
+        </div>`}
+      </div>
+      <p class="note err" id="qerr" hidden></p>`;
+    const shownAt = Date.now();
+    const qerr = (t) => { const e = document.getElementById("qerr"); e.textContent = t; e.hidden = !t; };
+    app.querySelectorAll("[data-opt]").forEach((b) => b.addEventListener("click", () => {
+      S.sel = Number(b.dataset.opt);
+      app.querySelectorAll("[data-opt]").forEach((x) => x.setAttribute("aria-pressed", String(Number(x.dataset.opt) === S.sel)));
+    }));
+    const conf = document.getElementById("conf");
+    if (conf) conf.addEventListener("input", () => {
+      S.conf = Number(conf.value);
+      document.getElementById("confout").textContent = S.conf + "%";
+      conf.closest(".conf").classList.remove("unset");
+    });
+    const thinking = () => (document.getElementById("thinking") || {}).value || "";
+    const submit = () => {
+      let answer, choice;
+      if (q.type === "multiple_choice") {
+        if (S.sel == null) return qerr("Pick an option first (number keys work).");
+        answer = q.options[S.sel];
+        choice = S.sel;
+      } else {
+        answer = document.getElementById("answer").value.trim();
+        if (!answer) return qerr("Write an answer, or use I don't know.");
+      }
+      if (!isClarify && S.conf == null) return qerr("Set how sure you are. Any value is fine; it's data, not a score.");
+      sendTurn({ action: "answer", answer, choice_index: choice, confidence: isClarify ? null : S.conf, thinking: thinking().trim(), ms: Date.now() - shownAt });
+    };
+    document.getElementById("submit").addEventListener("click", submit);
+    const ans = document.getElementById("answer");
+    if (ans) { ans.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(); } }); ans.focus(); }
+    const on = (id, fn) => { const b = document.getElementById(id); if (b) b.addEventListener("click", fn); };
+    on("idk", () => sendTurn({ action: "dont_know", thinking: thinking().trim() }));
+    on("hint", () => sendTurn({ action: "hint" }));
+    on("tell", () => sendTurn({ action: "just_tell_me" }));
+    on("harder", () => sendTurn({ action: "harder" }));
+    on("easier", () => sendTurn({ action: "easier" }));
+    S.submitPending = submit;
+  }
+
+  // Keyboard: 1-5 pick an option, Enter submits, H asks for a hint, / focuses the answer.
+  document.addEventListener("keydown", (e) => {
+    if (S.view !== "session" || S.busy || !S.course || !S.course.pending) return;
+    const t = e.target;
+    const typing = t && (t.tagName === "TEXTAREA" || (t.tagName === "INPUT" && t.type === "text"));
+    if (typing || e.metaKey || e.ctrlKey || e.altKey) return;
+    const q = S.course.pending;
+    if (q.type === "multiple_choice" && /^[1-5]$/.test(e.key) && Number(e.key) <= q.options.length) {
+      e.preventDefault();
+      const b = app.querySelector(`[data-opt="${Number(e.key) - 1}"]`);
+      if (b) b.click();
+    } else if (e.key === "Enter" && t.tagName !== "BUTTON") {
+      e.preventDefault();
+      S.submitPending && S.submitPending();
+    } else if (e.key === "h" || e.key === "H") {
+      const b = document.getElementById("hint");
+      if (b && !b.disabled) { e.preventDefault(); b.click(); }
+    } else if (e.key === "/") {
+      const a = document.getElementById("answer") || document.getElementById("thinking");
+      if (a) { e.preventDefault(); a.focus(); }
+    }
+  });
+
+  // ---------- skill map ----------
+  const NS = "http://www.w3.org/2000/svg";
+  function svgEl(tag, attrs, text) {
+    const el = document.createElementNS(NS, tag);
+    for (const k in attrs) el.setAttribute(k, attrs[k]);
+    if (text != null) el.textContent = text;
+    return el;
+  }
+  function levelColor(l) {
+    return ["var(--muted)", "var(--muted)", "var(--ink)", "var(--accent)", "var(--accent)", "var(--good)"][l] || "var(--muted)";
+  }
+  function trunc(s, n) { s = String(s); return s.length > n ? s.slice(0, n - 1) + "\u2026" : s; }
+
+  function renderMap() {
+    const wrap = document.getElementById("mapwrap");
+    if (!wrap || !S.course) return;
+    const c = S.course;
+    wrap.innerHTML = "";
+    const box = document.createElement("div");
+    box.className = "mapbox";
+    wrap.appendChild(box);
+    if (!(c.nodes || []).length) {
+      box.innerHTML = `<p class="none">${c.phase === "clarify" ? "The map appears once the goal is clear and the tutor has probed what you know." : "Working out what you already know…"}</p>`;
+      return;
+    }
+    const lv = C.levels(c);
+    const layers = C.layout(c);
+    const W = 168, H = 50, GX = 18, GY = 46, PAD = 12;
+    const widest = Math.max(...layers.map((l) => l.length));
+    const width = Math.max(2 * PAD + widest * W + (widest - 1) * GX, 320);
+    const height = 2 * PAD + layers.length * H + (layers.length - 1) * GY;
+    const pos = {};
+    layers.forEach((ids, li) => {
+      const rowW = ids.length * W + (ids.length - 1) * GX;
+      const x0 = (width - rowW) / 2;
+      const y = height - PAD - (li + 1) * H - li * GY;
+      ids.forEach((id, i) => { pos[id] = { x: x0 + i * (W + GX), y }; });
+    });
+    const svg = svgEl("svg", { viewBox: `0 0 ${width} ${height}`, role: "img", "aria-label": "Skill map, foundations at the bottom, goal at the top" });
+    svg.style.minWidth = Math.min(width, 640) + "px";
+    for (const [a, b] of c.edges) {
+      if (!pos[a] || !pos[b]) continue;
+      const x1 = pos[a].x + W / 2, y1 = pos[a].y, x2 = pos[b].x + W / 2, y2 = pos[b].y + H;
+      const my = (y1 + y2) / 2;
+      svg.appendChild(svgEl("path", { d: `M${x1},${y1} C${x1},${my} ${x2},${my} ${x2},${y2}`, class: "edge" + (S.lit.has(a) && S.lit.has(b) ? " lit" : "") }));
+    }
+    const flagged = new Set((c.misconceptions || []).filter((m) => !(m.retests || []).some((r) => r.passed)).map((m) => m.nodeId));
+    for (const n of c.nodes) {
+      const p = pos[n.id];
+      if (!p) continue;
+      const l = lv[n.id] || 0;
+      const cls = ["nd", S.selected === n.id && "sel", c.pending && c.pending.node_id === n.id && "focus", S.lit.has(n.id) && "lit", S.flash.has(n.id) && "up"].filter(Boolean).join(" ");
+      const g = svgEl("g", { class: cls, tabindex: "0", role: "button", "aria-label": `${n.title}, level ${l} of 5, ${C.LEVEL_NAMES[l]}${flagged.has(n.id) ? ", misconception flagged" : ""}` });
+      g.appendChild(svgEl("rect", { x: p.x, y: p.y, width: W, height: H, rx: 6 }));
+      g.appendChild(svgEl("text", { x: p.x + 10, y: p.y + 20, class: "nt" }, trunc(n.title, 21)));
+      g.appendChild(svgEl("text", { x: p.x + 10, y: p.y + 38, class: "nl", fill: levelColor(l) }, BAR(l) + " " + l));
+      if (flagged.has(n.id)) g.appendChild(svgEl("text", { x: p.x + W - 12, y: p.y + 20, class: "flag", "text-anchor": "end" }, "!"));
+      const pick = () => { S.selected = S.selected === n.id ? null : n.id; renderMap(); };
+      g.addEventListener("click", pick);
+      g.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(); } });
+      svg.appendChild(g);
+    }
+    box.appendChild(svg);
+    const legend = document.createElement("div");
+    legend.className = "legend";
+    legend.innerHTML = `<span class="mono">█ level 0–5</span><span><span class="flag" style="color:var(--warn);font-family:var(--mono)">!</span> misconception not yet retested</span><span>Outlined: current question</span>`;
+    wrap.appendChild(legend);
+    if (S.selected && nodeOf(S.selected)) wrap.appendChild(detailEl(nodeOf(S.selected), lv));
+  }
+
+  function detailEl(n, lv) {
+    const c = S.course;
+    const el = document.createElement("section");
+    el.className = "detail";
+    const atts = (c.attempts || []).filter((a) => a.nodeId === n.id);
+    const mis = (c.misconceptions || []).filter((m) => m.nodeId === n.id);
+    const pre = C.prereqsOf(c, n.id).map((id) => nodeOf(id)?.title || id);
+    el.innerHTML = `
+      <h3>${esc(n.title)}</h3>
+      <div class="mono">${BAR(lv[n.id])} ${lv[n.id]} · ${esc(C.LEVEL_NAMES[lv[n.id]])}</div>
+      ${n.claim ? `<p class="claim" style="margin:0">${esc(n.claim)}</p>` : ""}
+      <div class="note">${esc(n.knowledge_type.replace("_", " "))}${pre.length ? " · builds on " + pre.map(esc).join(", ") : " · foundation"}</div>
+      ${mis.length || (n.misconceptions || []).length ? `<div><span class="label">Misconceptions</span><ul>
+        ${mis.map((m) => `<li><b>Yours:</b> ${esc(m.description)} <span class="note">${(m.retests || []).length ? ((m.retests.at(-1).passed ? "retest passed" : "retest failed")) : "not yet retested"}</span></li>`).join("")}
+        ${(n.misconceptions || []).map((m) => `<li class="note">Common: ${esc(m)}</li>`).join("")}
+      </ul></div>` : ""}
+      <div><span class="label">Evidence</span>${atts.length ? `<div class="tblwrap"><table>
+        <thead><tr><th>Turn</th><th>Check</th><th>Result</th><th>Sure</th><th>Hints</th><th></th></tr></thead>
+        <tbody>${atts.map((a) => `<tr><td>${a.turn}</td><td>${esc(a.isPrediction ? "prediction" : a.checkKind)}</td><td>${esc(a.told ? "told" : a.verdict)}</td><td>${a.confidence}%</td><td>${a.hints}</td><td>${a.delayed ? "delayed" : a.afterReveal ? "just taught" : ""}</td></tr>`).join("")}</tbody>
+      </table></div>` : '<p class="note" style="margin:4px 0 0">No checks yet.</p>'}</div>`;
+    return el;
+  }
+
+  // ---------- boot ----------
+  async function boot() {
+    renderHome();
+    await store.init();
+    try { S.courses = await store.list(); } catch (e) { S.courses = []; S.loadError = true; }
+    S.loading = false;
+    if (S.view === "home") renderHome();
+  }
+  boot();
+})();
+</script>
